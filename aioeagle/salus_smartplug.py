@@ -14,12 +14,13 @@ class SX885ZB(ZigbeeDevice):
       'Protocol': 'Zigbee'}
     """
 
+    # I think these need to be in the order they're stored on the bridge
     ENERGY_AND_POWER_VARIABLES = [
-        "zigbee:InstantaneousDemand",
         "zigbee:CurrentSummationDelivered",
+        "zigbee:InstantaneousDemand",
     ]
 
-    CONTROL_VARIABLE = "zigbee:OnOff"
+    CONTROL_VARIABLE = [ "zigbee:OnOff", ]
 
     @classmethod
     def create_instance(cls, hub, hardware_address):
@@ -30,6 +31,34 @@ class SX885ZB(ZigbeeDevice):
             },
             hub.make_request,
         )
+    
+    async def get_device_query(self, variables=None):
+        """Query data."""
+        if variables is None:
+            components = {"All": "Y"}
+        else:
+            components = {
+                "Component": {
+                    "Name": "SALUS:Receptacle",
+                    "Variables": [{"Variable": {"Name": var}} for var in variables],
+                }
+            }
+        data = await self.make_request(
+            self.create_command(
+                "device_query",
+                {"Components": components},
+            )
+        )
+        self.details = data["Device"]["DeviceDetails"]
+
+        result = {}
+        for component in xmltodict_ensure_list(
+            data["Device"]["Components"], "Component"
+        ):
+            for variable in xmltodict_ensure_list(component["Variables"],"Variable"):
+                result[variable["Name"]] = variable
+
+        return result
 
     def __repr__(self) -> str:
         return f"<SX885ZB {self.details.get('Name', '')}>"
