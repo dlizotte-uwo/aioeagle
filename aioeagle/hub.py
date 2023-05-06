@@ -9,6 +9,7 @@ from aiohttp import ClientSession, BasicAuth
 import xmltodict
 
 from .electric_meter import ElectricMeter
+from .salus_smartplug import SX885ZB
 from .errors import BadAuth
 from .util import create_command, xmltodict_ensure_list
 
@@ -71,6 +72,8 @@ class EagleHub:
         for device in xmltodict_ensure_list(response["DeviceList"], "Device"):
             if device["ModelId"] == "electric_meter":
                 result.append(ElectricMeter(device, self.make_request))
+            elif device["ModelId"] == "SX885ZB":
+                result.append(SX885ZB(device, self.make_request))
             else:
                 _LOGGER.debug(f"Skipping unknown device {device['ModelId']}")
 
