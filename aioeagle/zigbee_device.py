@@ -69,34 +69,3 @@ class ZigbeeDevice:
             )
         )
         return xmltodict_ensure_list(data["Device"]["Components"], "Component")
-
-    async def get_device_query(self, variables=None):
-        """Query data."""
-        if variables is None:
-            components = {"All": "Y"}
-        else:
-            components = {
-                "Component": {
-                    "Name": "Main",
-                    "Variables": [{"Variable": {"Name": var}} for var in variables],
-                }
-            }
-        data = await self.make_request(
-            self.create_command(
-                "device_query",
-                {"Components": components},
-            )
-        )
-        self.details = data["Device"]["DeviceDetails"]
-
-        result = {}
-        for component in xmltodict_ensure_list(
-            data["Device"]["Components"], "Component"
-        ):
-            for variable in component["Variables"]["Variable"]:
-                result[variable["Name"]] = variable
-
-        return result
-
-    def __repr__(self) -> str:
-        return f"<ZigbeeDevice {self.details.get('Name', '')}>"
